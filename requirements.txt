@@ -1,0 +1,8 @@
+black
+flake8
+isort
+jupyterlab
+matplotlib
+git+https://github.com/neurolib-dev/neurolib@feature/multimodel_multiplicative_coupling
+numpy
+scipy
