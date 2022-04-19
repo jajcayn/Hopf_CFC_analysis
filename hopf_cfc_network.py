@@ -136,3 +136,6 @@ class SlowFastHopfNetwork(Network):
         assert all(all_couplings[0] == coupling for coupling in all_couplings)
         # invert as to name: idx
         self.coupling_symbols = {v: k for k, v in all_couplings[0].items()}
+
+        # TODO within-unit connections multiplicative, between-unit connections
+        # TODO diffusive

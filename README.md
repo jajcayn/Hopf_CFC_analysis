@@ -6,6 +6,8 @@
 
 We use [`neurolib`](https://github.com/neurolib-dev/neurolib) for all our simulations. Our network is a network of Hopf oscillators. Single "unit" is a subnetwork with one slow and one fast Hopf, connected via multiplicative coupling. In a case of more than one "unit", **only** the slow ones are interconnected, using a diffusive coupling.
 
+!! Note: network is not ready for more slow-fast "units". As of now, all connections are multiplicative
+
 ## Basic parameters
 
 - `w`: oscillator frequency
