@@ -15,7 +15,7 @@ from scipy.signal import find_peaks
 
 
 
-# w instrinsic
+# w intrinsic
 # 0.003 ~ 0.5Hz
 # 0.005 ~ 0.8Hz
 # 0.01 ~ 2Hz
@@ -59,8 +59,8 @@ parameters = ParameterSpace(
         "fast_to_slow": np.append(np.linspace(0.0, 1., 10), np.linspace(1., 10., 10)),
         "frequency_slow": np.array([0.02, 0.04, 0.08]),
         "frequency_fast": np.array([0.2, 0.3, 0.4]),
-        "bifurcation_param_slow": np.array([0.5, 1.3, 4, 8]),
-        "bifurcation_param_fast": np.array([0.3, 0.5, 1, 4]),
+        "bifurcation_param_slow": np.array([0.6, 1.3, 4, 8]),
+        "bifurcation_param_fast": np.array([0.4, 0.6, 1, 4]),
     },
     allow_star_notation=True,
     kind="grid",
@@ -80,10 +80,10 @@ def evaluateSimulation(traj):
     f_s_conn = model.params["fast_to_slow"]
 
     model.params["*connectivity"] = np.array([[0.0, f_s_conn], [s_f_conn, 0.0]])
-    model.params["*0.HopfMass_0.a"] = model.params["bifurcation_param_slow"]
-    model.params["*1.HopfMass_0.a"] = model.params["bifurcation_param_fast"]
-    model.params["*0.HopfMass_0.w"] = model.params["frequency_slow"]
-    model.params["*1.HopfMass_0.w"] = model.params["frequency_fast"]
+    model.params['SlowFastHopfNet.SlowHopf_0.HopfMass_0.a'] = model.params["bifurcation_param_slow"]
+    model.params['SlowFastHopfNet.FastHopf_1.HopfMass_0.a'] = model.params["bifurcation_param_fast"]
+    model.params['SlowFastHopfNet.SlowHopf_0.HopfMass_0.w'] = model.params["frequency_slow"]
+    model.params['SlowFastHopfNet.FastHopf_1.HopfMass_0.w'] = model.params["frequency_fast"]
 
     model.run()
 
