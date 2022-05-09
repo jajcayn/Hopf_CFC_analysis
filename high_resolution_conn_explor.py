@@ -46,8 +46,6 @@ model.params["backend"] = "numba"
 # manually add params you want to change during exploration, btw model.params is just a dictionary, so you can add whatever :)
 model.params["slow_to_fast"] = 0.0
 model.params["fast_to_slow"] = 0.0
-model.params["bifurcation_param_slow"] = 0.25
-model.params["bifurcation_param_fast"] = 0.25
 model.params["frequency_slow"] = 0.04
 model.params["frequency_fast"] = 0.2
 
@@ -57,8 +55,8 @@ parameters = ParameterSpace(
     {
         "slow_to_fast": np.append(np.linspace(0.0, 1., 50), np.linspace(1., 10., 50)),
         "fast_to_slow": np.append(np.linspace(0.0, 1., 50), np.linspace(1., 10., 50)),
-        "frequency_slow": np.array([0.04,0.08]),
-        "frequency_fast": np.array([0.2,0.3])
+        "frequency_slow": np.array([0.025,0.04]),
+        "frequency_fast": np.array([0.14,0.2])
     },
     allow_star_notation=True,
     kind="grid",
@@ -77,10 +75,8 @@ def evaluateSimulation(traj):
     f_s_conn = model.params["fast_to_slow"]
 
     model.params["*connectivity"] = np.array([[0.0, f_s_conn], [s_f_conn, 0.0]])
-    model.params["*0.HopfMass_0.a"] = model.params["bifurcation_param_slow"]
-    model.params["*1.HopfMass_0.a"] = model.params["bifurcation_param_fast"]
-    model.params["*0.HopfMass_0.w"] = model.params["frequency_slow"]
-    model.params["*1.HopfMass_0.w"] = model.params["frequency_fast"]
+    model.params['SlowFastHopfNet.SlowHopf_0.HopfMass_0.w'] = model.params["frequency_slow"]
+    model.params['SlowFastHopfNet.FastHopf_1.HopfMass_0.w'] = model.params["frequency_fast"]
 
     model.run()
 
@@ -122,7 +118,7 @@ search = BoxSearch(
     evalFunction=evaluateSimulation,
     parameterSpace=parameters,
     filename="/mnt/raid/data/laura/Hopf_CFC_results/high_resolution_exploration.hdf",
-    ncores=78,
+    ncores=50,
 )
 
 
