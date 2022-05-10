@@ -58,7 +58,7 @@ parameters = ParameterSpace(
         "slow_to_fast": np.append(np.linspace(0.0, 1., 10), np.linspace(1., 10., 10)),
         "fast_to_slow": np.append(np.linspace(0.0, 1., 10), np.linspace(1., 10., 10)),
         "frequency_slow": np.array([0.02, 0.04, 0.08]),
-        "frequency_fast": np.array([0.2, 0.3, 0.4]),
+        "frequency_fast": np.array([0.15, 0.25, 0.35]),
         "bifurcation_param_slow": np.array([0.6, 1.3, 4, 8]),
         "bifurcation_param_fast": np.array([0.4, 0.6, 1, 4]),
     },
