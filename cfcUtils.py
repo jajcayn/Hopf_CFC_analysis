@@ -84,6 +84,19 @@ def phase_locking_value(phase_fast, phase_slow):
     return np.mean(np.exp((phase_slow - phase_fast) * 1j))
 
 
+def _standardize_ts(ts):
+    """
+
+    Author: Nikola Jajcay
+
+    Returns centered time series with zero mean and unit variance.
+    """
+    assert np.squeeze(ts).ndim == 1, "Only 1D time series can be centered"
+    ts -= np.mean(ts)
+    ts /= np.std(ts, ddof=1)
+
+    return ts
+
 def mutual_information(
         x, y, algorithm="EQQ", bins=None, k=None, log2=True, standardize=True
 ):
