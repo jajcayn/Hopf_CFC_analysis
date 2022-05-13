@@ -147,7 +147,7 @@ def _create_shifted_eqq_bins(ts, no_bins):
             else:
                 ts_bins.append(ts_sorted[idx + expand_idx])
     ts_bins.append(ts.max())
-    return ts_bins
+    return np.sort(ts_bins)
 
 
 def mutual_information(
