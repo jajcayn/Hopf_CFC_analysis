@@ -1,6 +1,6 @@
 """
-Run exploration with medium resolution within the connection strengths (20x20), but with 3x3 frequencies for the oscillators
-and 4x4 bifurcation parameters.
+Run exploration with medium resolution within the connection strengths (15x15), but with 3x3 frequencies for the oscillators
+and 5x5 bifurcation parameters.
 
 """
 
@@ -10,7 +10,7 @@ from neurolib.utils.functions import getPowerSpectrum
 from neurolib.utils.parameterSpace import ParameterSpace
 from neurolib.models.multimodel import MultiModel
 from hopf_cfc_network import SlowFastHopfNetwork
-from cfcUtils import modulation_index
+from cfcUtils import modulation_index_general, mean_vector_length, phase_locking_value, mutual_information
 from scipy.signal import find_peaks
 
 
@@ -55,12 +55,12 @@ model.params["frequency_fast"] = 0.2
 
 parameters = ParameterSpace(
     {
-        "slow_to_fast": np.append(np.linspace(0.0, 1., 10), np.linspace(1., 10., 10)),
-        "fast_to_slow": np.append(np.linspace(0.0, 1., 10), np.linspace(1., 10., 10)),
+        "slow_to_fast": np.linspace(0.0, 2., 15),
+        "fast_to_slow": np.linspace(0.0, 2., 15),
         "frequency_slow": np.array([0.02, 0.04, 0.08]),
         "frequency_fast": np.array([0.15, 0.25, 0.35]),
-        "bifurcation_param_slow": np.array([0.6, 1.3, 4, 8]),
-        "bifurcation_param_fast": np.array([0.4, 0.6, 1, 4]),
+        "bifurcation_param_slow": np.array([0.25, 0.6, 1.3, 4, 8]),
+        "bifurcation_param_fast": np.array([0.25, 0.4, 0.6, 1, 4]),
     },
     allow_star_notation=True,
     kind="grid",
@@ -87,24 +87,18 @@ def evaluateSimulation(traj):
 
     model.run()
 
-    n_bins = 18
 
     phase_slow = np.arctan2(model.y[0, :], model.x[0, :])
+    phase_fast = np.arctan2(model.y[1, :], model.x[1, :])
     amp_fast = np.sqrt(model.x[1, :] ** 2 + model.y[1, :] ** 2)
-    binned_phase = np.digitize(phase_slow, bins=np.linspace(-np.pi, np.pi, n_bins + 1))
-    mean_bin_amp = np.zeros(n_bins + 1)  # in theory index of bins goes from 0 to N_BINS
-    for bin_idx in np.unique(binned_phase):
-        mean_bin_amp[bin_idx] = np.mean(amp_fast[binned_phase == bin_idx])
 
-    mean_bin_amp = mean_bin_amp[
-                   1:
-                   ]  # because in theory there could be stuff that is smaller than -pi, then actually the interval between -pi and the next bin has index 1.
-    # normalize the mean amplitude in each bin
-    mean_bin_amp = mean_bin_amp / np.sum(mean_bin_amp)
-    mi = modulation_index(mean_bin_amp)
+    mi = modulation_index_general(amp_fast, phase_slow, n_bins = 18)
+    mvl = mean_vector_length(amp_fast, phase_slow)
+    plv = phase_locking_value(phase_fast, phase_slow)
+    minfo = mutual_information(phase_fast, phase_slow, bins=16, log2=False)
 
-    freq_slow, pow_slow = getPowerSpectrum(model.x.T[:, 0], dt=0.1, maxfr=40, spectrum_windowsize=1)
-    freq_fast, pow_fast = getPowerSpectrum(model.x.T[:, 1], dt=0.1, maxfr=40, spectrum_windowsize=1)
+    freq_slow, pow_slow = getPowerSpectrum(model.x.T[:, 0], dt=0.1, maxfr=60, spectrum_windowsize=1)
+    freq_fast, pow_fast = getPowerSpectrum(model.x.T[:, 1], dt=0.1, maxfr=60, spectrum_windowsize=1)
 
     peaks_fast, _ = find_peaks(pow_fast, height=max(1e-3, 1.0 * np.std(pow_fast)))
     peaks_slow, _ = find_peaks(pow_slow, height=max(1e-3, 0.5 * np.std(pow_slow)))
@@ -112,10 +106,14 @@ def evaluateSimulation(traj):
 
 
     result_dict = {
-        "modulation_index": mi,
         "peaks_freq_fast": peaks_fast,
-        "peaks_freq_slow": peaks_slow
+        "peaks_freq_slow": peaks_slow,
+        "modulation_index": mi,
+        "mean_vector_length": mvl,
+        "phase_locking_value": plv,
+        "mutual_information": minfo,
     }
+
 
     search.saveToPypet(result_dict, traj)
 
