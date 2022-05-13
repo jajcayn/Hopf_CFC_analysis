@@ -84,9 +84,9 @@ def phase_locking_value(phase_fast, phase_slow):
     return np.mean(np.exp((phase_slow - phase_fast) * 1j))
 
 
+
 def _standardize_ts(ts):
     """
-
     Author: Nikola Jajcay
 
     Returns centered time series with zero mean and unit variance.
@@ -96,6 +96,59 @@ def _standardize_ts(ts):
     ts /= np.std(ts, ddof=1)
 
     return ts
+
+
+def _create_naive_eqq_bins(ts, no_bins):
+    """
+    Author: Nikola Jajcay
+
+    Create naive EQQ bins given the timeseries.
+    """
+    assert ts.ndim == 1, "Only 1D timeseries supported"
+    ts_sorted = np.sort(ts)
+    # bins start with minimum
+    ts_bins = [ts.min()]
+    for i in range(1, no_bins):
+        # add bin edge according to number of bins
+        ts_bins.append(ts_sorted[int(i * ts.shape[0] / no_bins)])
+    # add last bin - maximum
+    ts_bins.append(ts.max())
+    return ts_bins
+
+
+def _create_shifted_eqq_bins(ts, no_bins):
+    """
+    Author: Nikola Jajcay
+
+    Create EQQ bins with possible shift if the same values would fall into
+    different bins.
+    """
+    assert ts.ndim == 1, "Only 1D timeseries supported"
+    ts_sorted = np.sort(ts)
+    # bins start with minimum
+    ts_bins = [ts.min()]
+    # ideal case
+    one_bin_count = ts.shape[0] / no_bins
+    for i in range(1, no_bins):
+        idx = int(i * one_bin_count)
+        if np.all(np.diff(ts_sorted[idx - 1 : idx + 2]) != 0):
+            ts_bins.append(ts_sorted[idx])
+        elif np.any(np.diff(ts_sorted[idx - 1 : idx + 2]) == 0):
+            where = np.where(np.diff(ts_sorted[idx - 1 : idx + 2]) != 0)[0]
+            expand_idx = 1
+            while where.size == 0:
+                where = np.where(
+                    np.diff(ts_sorted[idx - expand_idx : idx + 1 + expand_idx])
+                    != 0
+                )[0]
+                expand_idx += 1
+            if where[0] == 0:
+                ts_bins.append(ts_sorted[idx - expand_idx])
+            else:
+                ts_bins.append(ts_sorted[idx + expand_idx])
+    ts_bins.append(ts.max())
+    return ts_bins
+
 
 def mutual_information(
         x, y, algorithm="EQQ", bins=None, k=None, log2=True, standardize=True
