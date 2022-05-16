@@ -87,30 +87,47 @@ def evaluateSimulation(traj):
 
     model.run()
 
-
-    phase_slow = np.arctan2(model.y[0, :], model.x[0, :])
-    phase_fast = np.arctan2(model.y[1, :], model.x[1, :])
-    amp_fast = np.sqrt(model.x[1, :] ** 2 + model.y[1, :] ** 2)
-
-    mi = modulation_index_general(amp_fast, phase_slow, n_bins = 18)
-    mvl = mean_vector_length(amp_fast, phase_slow)
-    plv = phase_locking_value(phase_fast, phase_slow)
-    minfo = mutual_information(phase_fast, phase_slow, bins=16, log2=False)
-
     freq_slow, pow_slow = getPowerSpectrum(model.x.T[:, 0], dt=0.1, maxfr=60, spectrum_windowsize=1)
     freq_fast, pow_fast = getPowerSpectrum(model.x.T[:, 1], dt=0.1, maxfr=60, spectrum_windowsize=1)
 
     peaks_fast, _ = find_peaks(pow_fast, height=max(1e-3, 1.0 * np.std(pow_fast)))
     peaks_slow, _ = find_peaks(pow_slow, height=max(1e-3, 0.5 * np.std(pow_slow)))
 
+    if (np.allclose(np.asarray(model.x.T[100000:150000, 0]), np.asarray(model.x.T[150000:, 0]), rtol=1e-3) and
+            (np.allclose(np.asarray(model.x.T[100000:150000, 1]), np.asarray(model.x.T[150000:, 1]), rtol=1e-3))):
+
+        # that is, if in the last 10 seconds of the simulation are in a constant value, then we
+        # are in a fixed point, there's no oscillation --> we're not interested
+        mi = []
+        mvl_abs = []
+        plv_abs = []
+        mvl_angle = []
+        plv_angle = []
+        minfo = []
+
+    else:
+        phase_slow = np.arctan2(model.y[0, :], model.x[0, :])
+        phase_fast = np.arctan2(model.y[1, :], model.x[1, :])
+        amp_fast = np.sqrt(model.x[1, :] ** 2 + model.y[1, :] ** 2)
+
+        mi = modulation_index_general(amp_fast, phase_slow, n_bins = 18)
+        mvl = mean_vector_length(amp_fast, phase_slow)
+        mvl_abs = np.absolute(mvl)
+        mvl_angle = np.angle(mvl)
+        plv = phase_locking_value(phase_fast, phase_slow)
+        plv_abs = np.absolute(plv)
+        plv_angle = np.angle(plv)
+        minfo = mutual_information(phase_fast, phase_slow, bins=16, log2=False)
 
 
     result_dict = {
         "peaks_freq_fast": peaks_fast,
         "peaks_freq_slow": peaks_slow,
         "modulation_index": mi,
-        "mean_vector_length": mvl,
-        "phase_locking_value": plv,
+        "mean_vector_length_abs": mvl_abs,
+        "mean_vector_length_angle": mvl_angle,
+        "phase_locking_value_abs": plv_abs,
+        "phase_locking_value_angle": plv_angle,
         "mutual_information": minfo,
     }
 
