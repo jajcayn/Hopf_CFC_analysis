@@ -70,18 +70,21 @@ def mean_vector_length(amplitude_fast, phase_slow):
     return np.mean(temp)
 
 
-def phase_locking_value(phase_fast, phase_slow):
+def phase_locking_value(phase_fast, phase_slow, n=1, m=1):
     """
     Return complex phase locking value between two
     phase time series. The length of the PLV indicates
     the strength of phase locking, while the angle represents a
-    phase shift.
+    phase shift. We can also calculate the phase-locking mode n-m.
 
     :param phase_fast: time series of the phase for the fast component
     :param phase_slow: time series of the phase for the fast component
+    :param n: multiplies with the phase of the low frequency, in n-m mode, n >=1
+    :param m: multiplies with the phase of the fast frequency, in n-m mode, m >=1
     :return: complex phase locking value
     """
-    return np.mean(np.exp((phase_slow - phase_fast) * 1j))
+
+    return np.mean(np.exp((n*phase_slow - m*phase_fast) * 1j))
 
 
 
@@ -147,7 +150,7 @@ def _create_shifted_eqq_bins(ts, no_bins):
             else:
                 ts_bins.append(ts_sorted[idx + expand_idx])
     ts_bins.append(ts.max())
-    return np.sort(ts_bins)
+    return ts_bins
 
 
 def mutual_information(
