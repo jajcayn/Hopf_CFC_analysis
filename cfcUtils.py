@@ -1,4 +1,5 @@
 import numpy as np
+from numba import njit
 
 """
 Utility functions for Cross-Frequency Coupling, measures calculated as in:
@@ -53,7 +54,8 @@ def modulation_index_general(amplitude_fast, phase_slow, n_bins=18):
     kl = np.log(n_bins) + \
          np.sum(mean_bin_amp[mean_bin_amp != 0] * np.log(mean_bin_amp[mean_bin_amp != 0]))
 
-    return kl / np.log(n_bins)
+    # return list with zero as second element because of the unpacking in the compute_p_value function
+    return kl / np.log(n_bins), 0
 
 
 def mean_vector_length(amplitude_fast, phase_slow):
@@ -67,8 +69,10 @@ def mean_vector_length(amplitude_fast, phase_slow):
     :return: complex value for mean vector length
     """
     temp = amplitude_fast * np.exp(phase_slow * 1j)
-    return np.mean(temp)
-
+    mvl = np.mean(temp)
+    length = np.absolute(mvl)
+    angle = np.angle(mvl)
+    return length, angle
 
 def phase_locking_value(phase_fast, phase_slow, n=1, m=1):
     """
@@ -83,9 +87,39 @@ def phase_locking_value(phase_fast, phase_slow, n=1, m=1):
     :param m: multiplies with the phase of the fast frequency, in n-m mode, m >=1
     :return: complex phase locking value
     """
+    plv = np.mean(np.exp((n * phase_slow - m * phase_fast) * 1j))
+    length = np.absolute(plv)
+    angle = np.angle(plv)
+    return length, angle
 
-    return np.mean(np.exp((n*phase_slow - m*phase_fast) * 1j))
 
+def compute_p_values(x_slow, y_slow, t, measured_mi,  measured_mvl, measured_plv, measured_minfo, amp_fast, phase_fast, n=500):
+    """
+    :param measured: computed CFC measure from the simulated model
+
+    """
+    surrogate_mi = np.zeros(n)
+    surrogate_mvl = np.zeros(n)
+    surrogate_plv = np.zeros(n)
+    surrogate_minfo = np.zeros(n)
+
+    for i in range(n):
+        surrogate_shift = np.random.randint(low=0, high=len(t))
+        surrogate_slow_x = np.roll(x_slow, shift=surrogate_shift)
+        surrogate_slow_y = np.roll(y_slow, shift=surrogate_shift)
+
+        surrogate_phase_slow = np.arctan2(surrogate_slow_y, surrogate_slow_x)
+        surrogate_mi[i], _ = modulation_index_general(amplitude_fast=amp_fast, phase_slow = surrogate_phase_slow)
+        surrogate_mvl[i], _ = mean_vector_length(amplitude_fast=amp_fast, phase_slow= surrogate_phase_slow)
+        surrogate_plv[i], _ = phase_locking_value(phase_fast=phase_fast, phase_slow= surrogate_phase_slow)
+        surrogate_minfo[i], _ = mutual_information(phase_fast= phase_fast, phase_slow=surrogate_phase_slow, bins=16, log2=False)
+
+    p_value_mi = np.sum(surrogate_mi > measured_mi)/n
+    p_value_mvl = np.sum(surrogate_mvl > measured_mvl)/n
+    p_value_plv = np.sum(surrogate_plv > measured_plv)/n
+    p_value_minfo = np.sum(surrogate_minfo > measured_minfo)/n
+
+    return p_value_mi, p_value_mvl, p_value_plv, p_value_minfo
 
 
 def _standardize_ts(ts):
@@ -154,8 +188,10 @@ def _create_shifted_eqq_bins(ts, no_bins):
 
 
 def mutual_information(
-        x, y, algorithm="EQQ", bins=None, k=None, log2=True, standardize=True
+        phase_fast, phase_slow, algorithm="EQQ", bins=None, k=None, log2=True, standardize=True
 ):
+    x = phase_fast
+    y = phase_slow
     """
     In our case, x should be the time series of the phase of the fast component and y should be
     the time series of the phase of the slow component.
@@ -283,5 +319,5 @@ def mutual_information(
 
     else:
         raise ValueError(f"Unknown MI algorithm: {algorithm}")
-
-    return mi
+    # return list with zero as second element because of the unpacking in the compute_p_value function
+    return mi, 0
