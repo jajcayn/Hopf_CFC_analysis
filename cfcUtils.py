@@ -54,8 +54,7 @@ def modulation_index_general(amplitude_fast, phase_slow, n_bins=18):
     kl = np.log(n_bins) + \
          np.sum(mean_bin_amp[mean_bin_amp != 0] * np.log(mean_bin_amp[mean_bin_amp != 0]))
 
-    # return list with zero as second element because of the unpacking in the compute_p_value function
-    return kl / np.log(n_bins), 0
+    return kl / np.log(n_bins)
 
 
 def mean_vector_length(amplitude_fast, phase_slow):
@@ -103,22 +102,23 @@ def compute_p_values(x_slow, y_slow, t, measured_mi,  measured_mvl, measured_plv
     surrogate_plv = np.zeros(n)
     surrogate_minfo = np.zeros(n)
 
+    surrogate_shift = np.random.randint(low=0, high=len(t), size=n)
     for i in range(n):
-        surrogate_shift = np.random.randint(low=0, high=len(t))
-        surrogate_slow_x = np.roll(x_slow, shift=surrogate_shift)
-        surrogate_slow_y = np.roll(y_slow, shift=surrogate_shift)
+        surrogate_slow_x = np.roll(x_slow, shift=surrogate_shift[i])
+        surrogate_slow_y = np.roll(y_slow, shift=surrogate_shift[i])
 
         surrogate_phase_slow = np.arctan2(surrogate_slow_y, surrogate_slow_x)
-        surrogate_mi[i], _ = modulation_index_general(amplitude_fast=amp_fast, phase_slow = surrogate_phase_slow)
-        surrogate_mvl[i], _ = mean_vector_length(amplitude_fast=amp_fast, phase_slow= surrogate_phase_slow)
-        surrogate_plv[i], _ = phase_locking_value(phase_fast=phase_fast, phase_slow= surrogate_phase_slow)
-        surrogate_minfo[i], _ = mutual_information(phase_fast= phase_fast, phase_slow=surrogate_phase_slow, bins=16, log2=False)
+        surrogate_mi[i] = modulation_index_general(amplitude_fast=amp_fast, phase_slow=surrogate_phase_slow)
+        surrogate_mvl[i], _ = mean_vector_length(amplitude_fast=amp_fast, phase_slow=surrogate_phase_slow)
+        surrogate_plv[i], _ = phase_locking_value(phase_fast=phase_fast, phase_slow=surrogate_phase_slow)
+        surrogate_minfo[i] = mutual_information(phase_fast= phase_fast, phase_slow=surrogate_phase_slow, bins=16, log2=False)
 
     p_value_mi = np.sum(surrogate_mi > measured_mi)/n
     p_value_mvl = np.sum(surrogate_mvl > measured_mvl)/n
     p_value_plv = np.sum(surrogate_plv > measured_plv)/n
     p_value_minfo = np.sum(surrogate_minfo > measured_minfo)/n
 
+    # return p_value_mi, p_value_mvl, p_value_plv, p_value_minfo, surrogate_mi, surrogate_mvl,surrogate_plv,surrogate_minfo
     return p_value_mi, p_value_mvl, p_value_plv, p_value_minfo
 
 
@@ -319,5 +319,5 @@ def mutual_information(
 
     else:
         raise ValueError(f"Unknown MI algorithm: {algorithm}")
-    # return list with zero as second element because of the unpacking in the compute_p_value function
-    return mi, 0
+
+    return mi

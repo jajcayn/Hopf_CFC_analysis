@@ -57,12 +57,12 @@ model.params["frequency_fast"] = 0.2
 
 parameters = ParameterSpace(
     {
-        "slow_to_fast": np.linspace(0.0, 2., 5),
-        "fast_to_slow": np.linspace(0.0, 2., 5),
-        "frequency_slow": np.array([0.02]),
-        "frequency_fast": np.array([0.15]),
-        "bifurcation_param_slow": np.array([0.25, 0.6]),
-        "bifurcation_param_fast": np.array([0.25, 0.4]),
+        "slow_to_fast": np.linspace(0.0, 2., 15),
+        "fast_to_slow": np.linspace(0.0, 2., 15),
+        "frequency_slow": np.array([0.02, 0.04, 0.08]),
+        "frequency_fast": np.array([0.15, 0.25, 0.35]),
+        "bifurcation_param_slow": np.array([0.25, 0.6, 1.3, 4, 8]),
+        "bifurcation_param_fast": np.array([0.25, 0.4, 0.6, 1, 4]),
     },
     allow_star_notation=True,
     kind="grid",
@@ -114,10 +114,10 @@ def evaluateSimulation(traj):
         phase_fast = np.arctan2(model.y[1, :], model.x[1, :])
         amp_fast = np.sqrt(model.x[1, :] ** 2 + model.y[1, :] ** 2)
 
-        mi, _ = modulation_index_general(amp_fast, phase_slow, n_bins=18)
+        mi = modulation_index_general(amp_fast, phase_slow, n_bins=18)
         mvl, _ = mean_vector_length(amp_fast, phase_slow)
         plv, _ = phase_locking_value(phase_fast, phase_slow)
-        minfo, _ = mutual_information(phase_fast, phase_slow, bins=16, log2=False)
+        minfo = mutual_information(phase_fast, phase_slow, bins=16, log2=False)
 
         p_value_mi, p_value_mvl, p_value_plv, p_value_minfo = compute_p_values(x_slow=model.x[0, :],
                                 y_slow=model.y[0, :], t=model.t, measured_mi=mi, measured_mvl=mvl,
